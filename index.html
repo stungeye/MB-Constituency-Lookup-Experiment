@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Constituency Lookup Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="maps.google.polygon.containsLatLng.js"></script>
+    <script type="text/javascript" src="domready.js"></script>
+    <style type="text/css">
+      html {
+        height: 100%;
+      }
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map-canvas {
+         margin: 0;
+         padding: 0;
+         height: 700px;
+         max-width: none;
+      }
+      #map-canvas img {
+         max-width: none !important;
+      }
+    </style>
+</head>
+<body>
+    <h1>Constituency Lookup Demo</h1>
+    <form id="geocode">
+      <input name="address-input" id="address-input">
+      <input type="submit">
+    </form>
+    <div id="map-canvas"></div>
+    <script>
+      domReady(function() {
+        "use strict";
+
+        function geocode(map, polygons, geoJson) {
+          var addressInput = document.getElementById('address-input').value;
+          var geocoder = new google.maps.Geocoder();
+
+          // Messy! callback within callback within callback...
+          geocoder.geocode({address: addressInput}, function(results, status) {
+            if (status != google.maps.GeocoderStatus.OK) return; // Guard
+
+            var location = results[0].geometry.location,
+                i = 0;
+
+            polygons.forEach(function(polygon) {
+              if (polygon.containsLatLng(location)) {
+                alert("Found Constituency " + geoJson.features[i].properties.ED);
+                new google.maps.Marker({ map: map, position: location });
+              }
+              i++;
+            });
+          });
+        }
+
+        var map,
+            geoJson,
+            polygons = [],
+            form = document.getElementById("geocode"),
+            centre_of_winnipeg_latitude = 49.86,
+            centre_of_winnipeg_longitude = -97.13,
+            mapOptions = {
+              center: new google.maps.LatLng(centre_of_winnipeg_latitude, centre_of_winnipeg_longitude),
+              zoom: 11,
+              mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+
+        map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+
+        // The following callback soup need refactoring.
+        // It would be better to load the GeoJSON using xhr and build the polygons from that,
+        // rather than load it using loadGeoJson and rely on callbacks to extract the polygons.
+        map.data.loadGeoJson('winnipeg_manitoba_constituencies.geojson', null, function(){
+          // Capture the geoJson structure for use within geocode function.
+          map.data.toGeoJson(function(g) { geoJson = g; });
+          // Loop over the geoJson features extracting the polygons for use within geocode function.
+          map.data.forEach(function(feature) {
+            var polygon = feature.getGeometry(),
+                points = polygon.getAt(0).getArray(),
+                path = [];
+            points.forEach(function(ll) { path.push(new google.maps.LatLng(ll.lat(), ll.lng())); });
+            polygons.push(new google.maps.Polygon({ paths: path }));
+          });
+        });
+
+        // The Callback function closes over map, polygons and geoJson variables, defined above.
+        form.addEventListener("submit", function(e) { e.preventDefault(); geocode(map, polygons, geoJson); }, false);
+      });
+    </script>
+</body>
+</html>
