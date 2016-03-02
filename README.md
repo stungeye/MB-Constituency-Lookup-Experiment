@@ -1,6 +1,6 @@
 ## Manitoba Election Constituency Lookup Experiment
 
-Experimenting with using Google Maps address geocoding paired with the [GeoJSON constituency polygons](https://github.com/OpenDemocracyManitoba/Manitoba-Election-GeoJSON-Constituencies).
+Experiment using Google Maps address geocoding paired with the Manitoba [GeoJSON constituency polygons](https://github.com/OpenDemocracyManitoba/Manitoba-Election-GeoJSON-Constituencies).
 
 Given an address the code attempts to:
 
